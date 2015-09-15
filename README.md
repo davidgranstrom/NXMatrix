@@ -11,6 +11,7 @@ Clone this repo into your `Platform.userExtensionDir` (e.g. `~/Library/Applicati
 Example usage
 -------------
 
+    (
     s.waitForBoot {
         // create a 4x4 matrix mixer 
         m = NXMatrix(4, 4);
