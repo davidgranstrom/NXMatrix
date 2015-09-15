@@ -1,0 +1,95 @@
+title:: NXMatrix
+summary:: A matrix mixer
+categories:: UGens>Multichannel
+
+DESCRIPTION::
+
+A matrix mixer can be thought of as a mixer with only aux sends. The output channels are represented as rows (in the matrix) and input channels are represented as columns. An input signal (column) can be routed to separated output buses (rows).
+
+The class allocates (private) buses for input/output which are used internally in the matrix mixer. Thus the user will need to route the output buses to the sound card in order to hear the output signal(s). See example below. Keeping the buses internal (private) makes the creation of feedback networks much easier to work with.
+
+SUBSECTION:: Control
+
+The naming convention for controlling the amplitudes of the output sends is structured as teletype::amp_ROWNUM_COLNUM::.
+For example, given that an instance of teletype::NXMatrix:: is stored in the variable teletype::m::.
+
+teletype::m.matrix.set("amp_0_1", 0.5);:: Will send the input signal at column 1 to the output of row 0 with an amplitude of 0.5.
+
+
+CLASSMETHODS::
+
+method:: new
+
+argument:: numRows
+The number of outputs in the matrix
+
+argument:: numColumns
+The number of inputs in the matrix
+
+argument:: group
+An optional group to place the matrix mixer
+
+argument:: numChannels
+The number of channels for the private buses
+
+INSTANCEMETHODS::
+
+method:: inputChannels
+
+An array of input buses
+
+method:: outputChannels
+
+An array of output buses
+
+method:: matrix
+
+Get the instance of the matrix synth
+
+method:: group
+
+Get the group where the matrix synth is located
+
+method:: free
+
+Frees the allocated resources (I/O buses, group) and the matrix synth. They could already have been freed by CmdPeriod, so server errors might be printed (but can safely be disregarded).
+
+method:: gui
+
+Generates a simple gui to represent the matrix mixer. The gui is embeddable.
+
+EXAMPLES::
+
+code::
+(
+s.waitForBoot {
+    // create a 4x4 matrix mixer
+    m = NXMatrix(4, 4);
+
+    // something to work with
+    x = play {
+        // read output from matrix mixer (feedback)
+        var matrixOutputs = m.outputChannels.collect {|bus| InFeedback.ar(bus, bus.numChannels) };
+        // connect a SinOsc to each matrix input, PM modulation with matrix output
+        m.inputChannels.do {|bus, i|
+            var sig = SinOsc.ar(rrand(220.0, 880.0), matrixOutputs[i]);
+            Out.ar(bus, sig.dup);
+        };
+    };
+
+    // NOTE: we won't hear any sound at this point, since all routing is internal to the matrix mixer
+
+    // we can create a mixer synth which routes the output to the DAC
+    SynthDef(\nx_mixer, {|amp=0.2, out|
+        var o = m.outputChannels.collect {|bus| In.ar(bus, bus.numChannels) };
+        Out.ar(out, amp * Limiter.ar(o.sum));
+    }).add;
+};
+)
+
+// start the mixer defined above
+Synth.tail(s, \nx_mixer);
+
+// play with some knobs
+m.gui;
+::
