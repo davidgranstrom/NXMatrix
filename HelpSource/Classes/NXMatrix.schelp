@@ -15,6 +15,7 @@ For example, given that an instance of teletype::NXMatrix:: is stored in the var
 
 teletype::m.matrix.set("amp_0_1", 0.5);:: Will send the input signal at column 1 to the output of row 0 with an amplitude of 0.5.
 
+PRIVATE:: makeSynthDefs
 
 CLASSMETHODS::
 
@@ -49,6 +50,18 @@ Get the instance of the matrix synth
 method:: group
 
 Get the group where the matrix synth is located
+
+method:: numRows
+
+Get the number of rows
+
+method:: numColumns
+
+Get the number of columns
+
+method:: numChannels
+
+Get the number of channels for the private buses
 
 method:: free
 
