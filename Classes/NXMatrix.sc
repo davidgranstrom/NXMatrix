@@ -1,5 +1,5 @@
 NXMatrix {
-    var numRows, numColumns, <group, numChannels;
+    var <numRows, <numColumns, <group, <numChannels;
 
     var <inputChannels, <outputChannels;
     var <matrix;
