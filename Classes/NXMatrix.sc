@@ -1,38 +1,37 @@
 NXMatrix {
-    var <numRows, <numColumns, <group, <numChannels;
+    var <numRows, <numColumns, <numChannels, lagTime, server;
 
     var <inputChannels, <outputChannels;
     var <matrix;
 
-    *new {|numRows=4, numColumns=4, group, numChannels=2|
-        ^super.newCopyArgs(numRows, numColumns, group, numChannels).init;
+    *new {|numRows=4, numColumns=4, numChannels=2, lagTime=0.01, server|
+        ^super.newCopyArgs(numRows, numColumns, numChannels, lagTime, server).init;
     }
 
     init {
-        var server;
-
-        group  = group ?? { Group.new };
-        server = group.server;
-
-        // allocate a buses
+        server = server ?? { Server.default };
         inputChannels  = numColumns.collect { Bus.audio(server, numChannels) };
         outputChannels = numRows.collect { Bus.audio(server, numChannels) };
 
         forkIfNeeded {
             this.makeSynthDefs;
             server.sync;
-            matrix = Synth.tail(group, \nx_matrix);
         };
 
         // clean up on cmd period
         CmdPeriod.doOnce { inputChannels.do(_.free); outputChannels.do(_.free) };
     }
 
+    play {|target, addAction='addToHead'|
+        target  = target ?? { server };
+        ^matrix = Synth(\nx_matrix, nil, target, addAction);
+    }
+
     makeSynthDefs {
         SynthDef(\nx_matrix, {
             inputChannels.collect {|inBus, colIdx|
                 outputChannels.collect {|outBus, rowIdx|
-                    var amp = NamedControl.ar("amp_%_%".format(rowIdx, colIdx), 0, 0.01);
+                    var amp = NamedControl.ar("amp_%_%".format(rowIdx, colIdx), 0, lagTime);
                     var sig = In.ar(inBus, inBus.numChannels);
                     Out.ar(outBus, amp * sig);
                 };
@@ -68,7 +67,6 @@ NXMatrix {
     free {
         // will report server errors if already freed by CmdPeriod
         matrix.free;
-        group.free;
         inputChannels.do(_.free);
         outputChannels.do(_.free);
     }
