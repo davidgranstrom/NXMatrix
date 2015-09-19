@@ -27,13 +27,28 @@ The number of outputs in the matrix
 argument:: numColumns
 The number of inputs in the matrix
 
-argument:: group
-An optional group to place the matrix mixer
-
 argument:: numChannels
 The number of channels for the private buses
 
+argument:: lagTime
+Lag time for amp controls
+
+argument:: server
+An optional instance of link::Classes/Server::
+
 INSTANCEMETHODS::
+
+method:: play
+
+Creates the matrix node
+
+argument:: target
+
+An optional target for the node (see link::Classes/Synth:: for possible targets)
+
+argument:: addAction
+
+The addAction for the node (see link::Classes/Synth:: for possible addActions)
 
 method:: inputChannels
 
@@ -46,10 +61,6 @@ An array of output buses
 method:: matrix
 
 Get the instance of the matrix synth
-
-method:: group
-
-Get the group where the matrix synth is located
 
 method:: numRows
 
@@ -65,11 +76,14 @@ Get the number of channels for the private buses
 
 method:: free
 
-Frees the allocated resources (I/O buses, group) and the matrix synth. They could already have been freed by CmdPeriod, so server errors might be printed (but can safely be disregarded).
+Frees the allocated buses and the matrix synth. They could already have been freed by CmdPeriod, so server errors might be printed (but can safely be disregarded).
 
 method:: gui
 
 Generates a simple gui to represent the matrix mixer. The gui is embeddable.
+
+argument:: embed
+If embed is true, no link::Classes/Window:: will be created, and the link::Classes/View:: will be returned.
 
 EXAMPLES::
 
@@ -79,7 +93,10 @@ s.waitForBoot {
     // create a 4x4 matrix mixer
     m = NXMatrix(4, 4);
 
-    // something to work with
+    // start the matrix synth
+    m.play;
+
+    // create some input
     x = play {
         // read output from matrix mixer (feedback)
         var matrixOutputs = m.outputChannels.collect {|bus| InFeedback.ar(bus, bus.numChannels) };
@@ -92,7 +109,7 @@ s.waitForBoot {
 
     // NOTE: we won't hear any sound at this point, since all routing is internal to the matrix mixer
 
-    // we can create a mixer synth which routes the output to the DAC
+    // create a mixer synth which routes the output of the matrix mixer to the DAC
     SynthDef(\nx_mixer, {|amp=0.2, out|
         var o = m.outputChannels.collect {|bus| In.ar(bus, bus.numChannels) };
         Out.ar(out, amp * Limiter.ar(o.sum));
@@ -101,8 +118,11 @@ s.waitForBoot {
 )
 
 // start the mixer defined above
-Synth.tail(s, \nx_mixer);
+z = Synth.tail(s, \nx_mixer);
 
 // play with some knobs
 m.gui;
+
+// don't forget to free
+x.free; z.free; m.free;
 ::
