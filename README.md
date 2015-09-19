@@ -13,12 +13,15 @@ Example usage
 
     (
     s.waitForBoot {
-        // create a 4x4 matrix mixer 
+        // create a 4x4 matrix mixer
         m = NXMatrix(4, 4);
 
-        // something to work with
+        // start the matrix synth
+        m.play;
+
+        // create some input
         x = play {
-            // read output from matrix mixer (feedback) 
+            // read output from matrix mixer (feedback)
             var matrixOutputs = m.outputChannels.collect {|bus| InFeedback.ar(bus, bus.numChannels) };
             // connect a SinOsc to each matrix input, PM modulation with matrix output
             m.inputChannels.do {|bus, i|
@@ -29,16 +32,20 @@ Example usage
 
         // NOTE: we won't hear any sound at this point, since all routing is internal to the matrix mixer
 
-        // we can create a mixer synth which routes the output to the DAC
+        // create a mixer synth which routes the output of the matrix mixer to the DAC
         SynthDef(\nx_mixer, {|amp=0.2, out|
             var o = m.outputChannels.collect {|bus| In.ar(bus, bus.numChannels) };
             Out.ar(out, amp * Limiter.ar(o.sum));
         }).add;
-    };            
+    };
     )
 
     // start the mixer defined above
-    Synth.tail(s, \nx_mixer);
+    z = Synth.tail(s, \nx_mixer);
 
     // play with some knobs
     m.gui;
+
+    // don't forget to free
+    x.free; z.free; m.free;
+
