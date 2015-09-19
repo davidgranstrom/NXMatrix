@@ -40,8 +40,8 @@ NXMatrix {
         }).add;
     }
 
-    gui {
-        var view = View();
+    gui {|embed=false|
+        var w, view = View();
         var grid = GridLayout();
 
         numRows.do {|rowIdx|
@@ -56,7 +56,13 @@ NXMatrix {
         };
 
         view.layout = grid;
-        ^view.front;
+
+        if(embed.not) {
+            w = Window("NXMatrix");
+            w.view.layout = HLayout(view);
+            ^w.front;
+        };
+        ^view;
     }
 
     free {
